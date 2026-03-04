@@ -3,15 +3,16 @@
 ## Extreme Waydroid Optimization: The Sandy Bridge Post-Mortem
 
 ### Introduction: The DIY Imperative
-When dealing with legacy hardware (specifically the **Intel i5-2430M Sandy Bridge, Gen6**), standard "out-of-the-box" drivers often prioritize broad stability over specific performance. If you want to run modern engines (Unity 2022+, Unreal 5) on a CPU-based renderer, **building your own libraries is the only way forward**.
+When dealing with legacy hardware (specifically the **Intel i5-2430M Sandy Bridge, Gen6**), standard drivers often prioritize stability over performance. While **SwiftShader** is a useful baseline, achieving a 60FPS-capable environment in modern engines (Unity 2022+, Unreal 5) requires moving beyond software-only renderers to highly-optimized, hardware-aware implementations like **MesaSB**.
 
 This guide is based on real-world optimizations for my personal hardware. It serves as a blueprint for others facing similar limitations and an invitation for the community to help refine these methods further.
 
-We transformed a non-functional black-screen experience into a 60FPS-capable environment by moving from SwiftShader to a custom-compiled **MesaSB** build, achieving a **300% performance increase**.
+We transformed a non-functional black-screen experience into a smooth environment by transitioning from standard SwiftShader (Baseline) to a custom-compiled **MesaSB** build (optimized Mesa Lavapipe), achieving a **300% performance increase** in 3D workloads.
 
 ---
 
 ## 1. The Core: Compiling "MesaSB" (Mesa 26.1.0-devel)
+Standard Mesa builds use generic x86_64 instructions. By compiling specifically for the **AVX1** instruction set of Sandy Bridge, we maximize CPU throughput for this exact chip. This build, which we've named **MesaSB**, is our primary driver for Waydroid.
 Standard Mesa builds use generic x86_64 instructions. By compiling specifically for the **AVX1** instruction set of Sandy Bridge, we maximize CPU throughput for this exact chip.
 
 ### Build Configuration
@@ -48,7 +49,7 @@ with open(path, "w") as f:
 ---
 
 ## 3. The Bridge: C++ Shims for Waydroid
-Waydroid's x86_64 environment often lacks internal Android symbols required by Vulkan drivers. We implemented a **Linker Shim** to satisfy these dependencies, bypassing architecture mismatches with system libraries.
+Waydroid's x86_64 environment often lacks internal Android symbols required by custom Vulkan drivers. We implemented a **Linker Shim** (originally inspired by SwiftShader's build system) to satisfy these dependencies for **MesaSB**, bypassing architecture mismatches with system libraries.
 
 ---
 
@@ -105,15 +106,16 @@ These adjustments were fine-tuned for my **i5-2430M**. If you have deeper knowle
 # MesaSB：Sandy Bridge 架构极致优化指南
 
 ## 前言：针对特定硬件的 DIY 优化
-在处理像 **Intel i5-2430M (Sandy Bridge, Gen6)** 这样的老旧硬件时，标准的“通用型”驱动程序往往为了稳定性而牺牲了大量性能。
+在处理像 **Intel i5-2430M (Sandy Bridge, Gen6)** 这样的老旧硬件时，标准的驱动程序往往为了稳定性而牺牲了大量性能。虽然 **SwiftShader** 是一个很好的基准参考，但要在现代引擎（Unity 2022+, Unreal 5）中实现流畅运行，必须超越纯软件渲染，采用像 **MesaSB** 这样针对硬件深度优化的实现。
 
 本指南是基于我个人硬件的真实优化过程编写的。它既是其他面临类似限制用户的蓝图，也是一份**社区邀请函**——如果你能帮助我进一步改进这些方法，请随时通过 Issue 或 PR 提供建议。
 
-我们通过从 SwiftShader 迁移到自定义编译的 **MesaSB**，实现了 **300% 的性能提升**。
+我们通过从标准的 SwiftShader 迁移到自定义编译的 **MesaSB** (优化的 Mesa Lavapipe)，在 3D 工作负载下实现了 **300% 的性能提升**。
 
 ---
 
 ## 1. 核心：编译 "MesaSB" (Mesa 26.1.0-devel)
+标准的 Mesa 构建使用通用的指令集。通过针对 Sandy Bridge 的 **AVX1** 指令集进行专门编译，我们最大化了该芯片的 CPU 吞吐量。我们将这个专门优化的版本命名为 **MesaSB**，作为 Waydroid 的主驱动程序。
 标准的 Mesa 构建使用通用的指令集。通过针对 Sandy Bridge 的 **AVX1** 指令集进行专门编译，我们最大化了该芯片的 CPU 吞吐量。
 
 ### 构建配置
@@ -126,7 +128,8 @@ These adjustments were fine-tuned for my **i5-2430M**. If you have deeper knowle
 
 ---
 
-## 3. 桥接：针对 Waydroid 的 C++ 中间件 (Shims)
+## 3. 桥接：针对 Waydroid 的链接器中间件 (Shims)
+Waydroid 的 x86_64 环境通常缺少自定义 Vulkan 驱动所需的 Android 内部符号。我们实现了一个链接器中间件（灵感来自 SwiftShader 的构建系统）来为 **MesaSB** 解决这些依赖关系，避免了架构冲突。
 我们实现了一个链接器中间件来解决 Android 内部符号缺失的问题，避免了与系统库的架构冲突。
 
 ---
